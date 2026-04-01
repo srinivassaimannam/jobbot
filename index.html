@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobBot — Your Personal Job Search Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- SETUP SCREEN -->
+  <div id="setup-screen" class="screen">
+    <div class="setup-wrap">
+      <div class="logo-mark">JB</div>
+      <h1 class="setup-title">JobBot</h1>
+      <p class="setup-sub">Your personal job search assistant.<br>Set up once. Find jobs every time you open this.</p>
+
+      <div class="card setup-card">
+        <div class="field-row">
+          <div class="field">
+            <label>Your name</label>
+            <input id="s-name" type="text" placeholder="e.g. Priya Sharma" />
+          </div>
+          <div class="field">
+            <label>Current / target role</label>
+            <input id="s-role" type="text" placeholder="e.g. Data Analyst" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Key skills</label>
+            <input id="s-skills" type="text" placeholder="Python, SQL, Power BI, Excel" />
+          </div>
+          <div class="field">
+            <label>Preferred location</label>
+            <input id="s-location" type="text" placeholder="Hyderabad, Remote, Bangalore" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Experience level</label>
+            <select id="s-exp">
+              <option value="">Select...</option>
+              <option value="ENTRY_LEVEL">Fresher / 0–2 years</option>
+              <option value="MID_LEVEL">Mid-level / 3–5 years</option>
+              <option value="SENIOR_LEVEL">Senior / 6–10 years</option>
+              <option value="DIRECTOR">Lead / Director 10+ years</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Job type preference</label>
+            <select id="s-type">
+              <option value="">Any</option>
+              <option value="FULLTIME">Full-time</option>
+              <option value="PARTTIME">Part-time</option>
+              <option value="CONTRACTOR">Contract</option>
+              <option value="INTERN">Internship</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>RapidAPI (JSearch) key — <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch" target="_blank">get free key ↗</a></label>
+          <input id="s-apikey" type="password" placeholder="Paste your X-RapidAPI-Key here" />
+        </div>
+        <button class="btn-main" onclick="saveSetupAndSearch()">Save &amp; Start searching →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-screen" class="screen" style="display:none;">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo-mark sm">JB</div>
+        <span class="topbar-title">JobBot</span>
+      </div>
+      <div class="topbar-center">
+        <input id="search-input" type="text" class="search-inline" placeholder="Search role, skill, company..." />
+        <button class="btn-search" onclick="runSearch()">Search</button>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-ghost" onclick="switchView('search')" id="nav-search">Jobs</button>
+        <button class="btn-ghost" onclick="switchView('saved')" id="nav-saved">Saved <span id="saved-count" class="badge">0</span></button>
+        <button class="btn-ghost settings-btn" onclick="toggleSettings()">⚙</button>
+      </div>
+    </header>
+
+    <!-- FILTERS BAR -->
+    <div class="filters-bar" id="filters-bar">
+      <div class="filter-group">
+        <span class="filter-label">Experience</span>
+        <div class="pills" id="exp-pills">
+          <div class="pill active" data-val="">All</div>
+          <div class="pill" data-val="ENTRY_LEVEL">Fresher</div>
+          <div class="pill" data-val="MID_LEVEL">Mid-level</div>
+          <div class="pill" data-val="SENIOR_LEVEL">Senior</div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Type</span>
+        <div class="pills" id="type-pills">
+          <div class="pill active" data-val="">All</div>
+          <div class="pill" data-val="FULLTIME">Full-time</div>
+          <div class="pill" data-val="PARTTIME">Part-time</div>
+          <div class="pill" data-val="CONTRACTOR">Contract</div>
+          <div class="pill" data-val="INTERN">Internship</div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Platform</span>
+        <div class="pills" id="platform-pills">
+          <div class="pill active" data-val="">All</div>
+          <div class="pill" data-val="linkedin">LinkedIn</div>
+          <div class="pill" data-val="indeed">Indeed</div>
+          <div class="pill" data-val="naukri">Naukri</div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label class="remote-toggle">
+          <input type="checkbox" id="remote-only" onchange="applyFilters()" /> Remote only
+        </label>
+      </div>
+    </div>
+
+    <!-- VIEWS -->
+    <main class="main-content">
+
+      <!-- SEARCH VIEW -->
+      <div id="view-search">
+        <div id="status-bar" class="status-bar"></div>
+        <div id="job-grid" class="job-grid"></div>
+      </div>
+
+      <!-- SAVED VIEW -->
+      <div id="view-saved" style="display:none;">
+        <div class="saved-header">
+          <h2>Saved jobs</h2>
+          <p class="muted">Jobs you've bookmarked. Update status as you progress.</p>
+        </div>
+        <div id="saved-list"></div>
+      </div>
+
+    </main>
+
+    <!-- SETTINGS PANEL -->
+    <div id="settings-panel" class="settings-panel" style="display:none;">
+      <div class="settings-inner">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+          <h3>Settings</h3>
+          <button class="btn-ghost" onclick="toggleSettings()">✕</button>
+        </div>
+        <div class="field">
+          <label>Your name</label>
+          <input id="cfg-name" type="text" />
+        </div>
+        <div class="field">
+          <label>Target role</label>
+          <input id="cfg-role" type="text" />
+        </div>
+        <div class="field">
+          <label>Skills</label>
+          <input id="cfg-skills" type="text" />
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input id="cfg-location" type="text" />
+        </div>
+        <div class="field">
+          <label>RapidAPI key</label>
+          <input id="cfg-apikey" type="password" />
+        </div>
+        <div class="field">
+          <label>Results per search</label>
+          <select id="cfg-count">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+        <button class="btn-main" style="width:100%;" onclick="saveSettings()">Save settings</button>
+        <button class="btn-danger" style="width:100%;margin-top:8px;" onclick="resetApp()">Reset &amp; start over</button>
+      </div>
+    </div>
+    <div id="settings-overlay" class="settings-overlay" style="display:none;" onclick="toggleSettings()"></div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
